@@ -1,5 +1,5 @@
 # WebCamHooker
-Web link(Japanese): 
+Web link(Japanese): https://cloud.flect.co.jp/entry/2020/03/31/162537
 
 ## 1. WebCamHooker
 
