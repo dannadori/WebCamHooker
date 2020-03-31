@@ -71,13 +71,13 @@ $ pip3 install -r requirements.txt
 Here you will get the cascade file, you can find out more about cascade file in opencv official.
 https://github.com/opencv/opencv/tree/master/data/haarcascades
 ```
-$ wget https://raw.githubusercontent.com/opencv/opencv/master/data/haarcascades/haarcascade_frontalface_default.xml
-$ wget https://raw.githubusercontent.com/opencv/opencv/master/data/haarcascades/haarcascade_smile.xml
+$ wget https://raw.githubusercontent.com/opencv/opencv/master/data/haarcascades/haarcascade_frontalface_default.xml -P models
+$ wget https://raw.githubusercontent.com/opencv/opencv/master/data/haarcascades/haarcascade_smile.xml -P models
 ```
 
 Let's borrow the smile mark from this site.
 ```
-$ wget https://4.bp.blogspot.com/-QeM2lPMumuo/UNQrby-TEPI/AAAAAAAAI7E/cZIpq3TTyas/s160/mark_face_laugh.png
+$ wget https://4.bp.blogspot.com/-QeM2lPMumuo/UNQrby-TEPI/AAAAAAAAI7E/cZIpq3TTyas/s160/mark_face_laugh.png -P images
 ```
 
 I hope it has a folder structure like this.
@@ -94,7 +94,7 @@ The execution is as follows.
  ** --output_video_dev must be the device file of the virtual webcam device.
 In addition, please use ctrl+c to terminate.
 ```
-$ python3 webcamhooker.py --input_video_num 1 --output_video_dev /dev/video0
+$ python3 webcamhooker.py --input_video_num 0 --output_video_dev /dev/video2
 ```
 
 When the above command is executed, ffmpeg starts to run and the video is delivered to the virtual camera device.
