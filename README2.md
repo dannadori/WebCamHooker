@@ -23,21 +23,22 @@ https://github.com/oarriaga/face_classification
 
 First of all, please clone the script and install the necessary modules from the following repository as in the previous one.
 
-``''
+```
 $ git clone https://github.com/dannadori/WebCamHooker.git
 $ cd WebCamHooker/
 $ pip3 install -r requirements.txt
+```
 
-``''
 
 Next, get a pre-trained model for emotional analysis from the site just mentioned.
 This time, in order to display an appropriate image, I will also make a gender judgment at the same time.
-``''
+```
 $ wget https://github.com/oarriaga/face_classification/raw/master/trained_models/emotion_models/fer2013_mini_XCEPTION.110-0.65.hdf5 -P models # models for emotional analysis
 $ wget https://github.com/oarriaga/face_classification/raw/master/trained_models/gender_models/simple_CNN.81-0.96.hdf5 -P models/ # models for gender determination
-``''
+```
+
 Also, let's borrow the image from Isuratoya again.
-``''
+```
 $ wget https://4.bp.blogspot.com/-8DirG_alwXo/V5Xc1SMykvI/AAAAAAAA8u4/krI2n_SWimUBGEyMWCw5kZZ-HzoUKrY8ACLcB/s800/pose_sugoi_okoru_woman.png -P images/
 $ wget https://4.bp.blogspot.com/-EBpxVigkCCY/V5Xc1CHSeEI/AAAAAAAA8u0/9XIAzDJaQNU3HIiXi4PCPK3aMip3aoGyACLcB/s800/pose_sugoi_okoru_man.png -P images/
 
@@ -57,7 +58,7 @@ $ wget https://3.bp.blogspot.com/-FrgNPMUG0TQ/XAnvUmb85VI/AAAAAAABQnI/Y06kkP278e
 $ wget https://2.bp.blogspot.com/-i7OL88NmOW8/XAnvQacGWuI/AAAAAAABQmY/LTzN4pcnSmYLke3OSPME4cUFRrLIrPsYACLcBGAs/s800/business_man2_3_surprise.png -P images/
 
 $ cp images/lN7zIROor9oi3q-JZOBJiKKzfklzPE1hwCLcBGAs/s800/business_man2_2_2_shock.png] images/lN7zIROor9oi3q-JZOBJiKKzfklzPE1hwCLcBGAs/s800/business_man2_2_shock.png
-``''
+```
 
 In the above, the last command only removes the garbage (trailing brackets) in the file name.
 
@@ -69,9 +70,9 @@ The execution is as follows. One option has been added.
 In addition, please use ctrl+c to terminate.
 - emotion_mode should be true.
 
-``''
+```
 $ python3 webcamhooker.py --input_video_num 0 --output_video_dev /dev/video2 --emotion_mode True
-``''
+```
 
 When the above command is executed, ffmpeg starts to run and the video is delivered to the virtual camera device.
 
