@@ -4,3 +4,5 @@ haarcascade_frontalface_default.xml
 haarcascade_smile.xml
 mark_face_laugh.png
 venv
+images
+models

@@ -6,7 +6,14 @@ import argparse
 from enum import IntEnum, auto
 import sys, math, os
 
+import threading
+import queue
+
 from keras.models import load_model
+import tensorflow as tf
+
+sys.path.append(os.path.join(os.path.dirname(__file__), 'UGATIT'))
+from UGATIT import UGATIT
 
 
 '''
@@ -29,14 +36,67 @@ parser.add_argument('--output_video_dev', type=str, required=True,
                     help='input video device. ex) /dev/video2')
 parser.add_argument('--emotion_mode', type=str2bool, required=False, default=False,
                     help='enable emotion mode')
+parser.add_argument('--anime_mode', type=str2bool, required=False, default=False,
+                    help='enable anime mode')
 
+'''
+args for anime mode 
+'''
+parser.add_argument('--phase', type=str, default='test', help='[train / test]')
+parser.add_argument('--light', type=str2bool, default=False, help='[U-GAT-IT full version / U-GAT-IT light version]')
+parser.add_argument('--dataset', type=str, default='selfie2anime', help='dataset_name')
+
+parser.add_argument('--epoch', type=int, default=100, help='The number of epochs to run')
+parser.add_argument('--iteration', type=int, default=10000, help='The number of training iterations')
+parser.add_argument('--batch_size', type=int, default=1, help='The size of batch size')
+parser.add_argument('--print_freq', type=int, default=1000, help='The number of image_print_freq')
+parser.add_argument('--save_freq', type=int, default=1000, help='The number of ckpt_save_freq')
+parser.add_argument('--decay_flag', type=str2bool, default=True, help='The decay_flag')
+parser.add_argument('--decay_epoch', type=int, default=50, help='decay epoch')
+
+parser.add_argument('--lr', type=float, default=0.0001, help='The learning rate')
+parser.add_argument('--GP_ld', type=int, default=10, help='The gradient penalty lambda')
+parser.add_argument('--adv_weight', type=int, default=1, help='Weight about GAN')
+parser.add_argument('--cycle_weight', type=int, default=10, help='Weight about Cycle')
+parser.add_argument('--identity_weight', type=int, default=10, help='Weight about Identity')
+parser.add_argument('--cam_weight', type=int, default=1000, help='Weight about CAM')
+parser.add_argument('--gan_type', type=str, default='lsgan', help='[gan / lsgan / wgan-gp / wgan-lp / dragan / hinge]')
+
+parser.add_argument('--smoothing', type=str2bool, default=True, help='AdaLIN smoothing effect')
+
+parser.add_argument('--ch', type=int, default=64, help='base channel number per layer')
+parser.add_argument('--n_res', type=int, default=4, help='The number of resblock')
+parser.add_argument('--n_dis', type=int, default=6, help='The number of discriminator layer')
+parser.add_argument('--n_critic', type=int, default=1, help='The number of critic')
+parser.add_argument('--sn', type=str2bool, default=True, help='using spectral norm')
+
+parser.add_argument('--img_size', type=int, default=256, help='The size of image')
+parser.add_argument('--img_ch', type=int, default=3, help='The size of image channel')
+parser.add_argument('--augment_flag', type=str2bool, default=True, help='Image augmentation use or not')
+
+parser.add_argument('--checkpoint_dir', type=str, default='checkpoint',
+                help='Directory name to save the checkpoints')
+parser.add_argument('--result_dir', type=str, default='results',
+                    help='Directory name to save the generated images')
+parser.add_argument('--log_dir', type=str, default='logs',
+                    help='Directory name to save training logs')
+parser.add_argument('--sample_dir', type=str, default='samples',
+                    help='Directory name to save the samples on training')
+
+'''
+Queue for anime mode
+'''
+anime_mode_input_queue  = queue.Queue()
+anime_mode_output_queue = queue.Queue()
+anime_buffer_image      = None
 
 '''
 Mode definition
 '''
 class modes(IntEnum):
     SIMPLE_SMILE_MODE = auto()
-    EMOTION_MODE      = auto()    
+    EMOTION_MODE      = auto()
+    ANIME_MODE        = auto()
 '''
 Classifiers
 '''
@@ -45,6 +105,8 @@ smile_cascade_classifier   = None
 emotion_classifier         = None
 gender_classifier          = None
 
+anime_session              = None
+anime_model                = None
 '''
 Labels
 '''
@@ -89,6 +151,13 @@ emtion_img_paths   = [
 ]
 
 
+def anime_mode_worker():
+    while True:
+        frame = anime_mode_input_queue.get()
+        new_frame = anime_model.predict(frame)
+        
+        anime_mode_output_queue.put( (frame, new_frame[0]))
+
 def load_resources(mode):
     global face_classifier_classifier
     face_classifier_classifier = cv2.CascadeClassifier(face_cascade_path)
@@ -107,22 +176,33 @@ def load_resources(mode):
         for path_per_gender in emtion_img_paths:
             images_per_gender = []
             for path in path_per_gender:
-                #if os.path.exists(path) == False:
-                #    print(sys.stderr, f'----------------------- {path} is not foound')
-                images_per_gender.append(cv2.imread(path))
+                if path is None:
+                    images_per_gender.append(None)
+                    continue
+                if os.path.exists(path) == False:
+                    print(sys.stderr, f'----------------------- {path} is not foound')
+                    continue
+                img = cv2.imread(path)
+                #print(img)
+                img = cv2.resize(img, ( int(img.shape[1]*0.5), int(img.shape[0]*0.5)) )
+                images_per_gender.append(img)
                 
             images.append(images_per_gender)
         emotion_images = images
+    if mode == modes.ANIME_MODE:
+        global anime_session, anime_model
+        
+        anime_session = tf.Session(config=tf.ConfigProto(allow_soft_placement=True))
+        anime_model   = UGATIT(anime_session, args)
+        anime_model.build_model()
+        anime_model.load_model(anime_session)
+        #gan.test()
+
+        
         
 
 def paste(img, imgback, x, y, angle, scale):
-    r   = img.shape[0]
-    c   = img.shape[1]
-    rb  = imgback.shape[0]
-    cb  = imgback.shape[1]    
-    #print(sys.stderr, f'(1) -> {r}, {c},    {rb},{cb}')
-    
-    if img.shape [0] > imgback.shape[0] or img.shaoe[1] > imgback.shape[1]:
+    if img.shape [0] > imgback.shape[0] or img.shape[1] > imgback.shape[1]:
         h_ratio = imgback.shape[0] / img.shape[0]
         w_ratio = imgback.shape[1] / img.shape[1]
         if h_ratio < w_ratio:
@@ -174,12 +254,30 @@ def paste(img, imgback, x, y, angle, scale):
     # Paste the forward image on the background image
     imgpaste = cv2.add(img1_bg,img2_fg)
 
-    return imgpaste, new_h, new_w
+    return imgpaste
 
 def apply_offsets(face_location, offsets):
     x, y, width, height = face_location
     x_off, y_off = offsets
     return (x - x_off, x + width + x_off, y - y_off, y + height + y_off)
+
+def apply_offsets_for_anime_mode(face_location, offsets):
+    x, y, width, height = face_location
+    x_off, y_off = offsets
+
+    top    = y - y_off
+    bottom = y + height + y_off
+    new_height = bottom - top
+    x_off = int((new_height - width ) / 2)
+
+    left  = x - x_off
+    right = x + width + x_off 
+
+    if top < 0:
+        top = 0
+    if left < 0 :
+        left = 0 
+    return (x - x_off, x + width + x_off, top, bottom)
 
 def preprocess_input(x, v2=True):
     x = x.astype('float32')
@@ -232,6 +330,9 @@ def edit_frame(frame):
                 emotion_gray      = np.expand_dims(emotion_gray, 0)
                 emotion_gray      = np.expand_dims(emotion_gray, -1)
                 emotion_pred      = emotion_classifier.predict(emotion_gray)
+                emotion_pred[0][0] += 0.1
+                emotion_pred[0][2] = 0.0
+                emotion_pred[0][5] += 0.05
                 emotion_label_arg = np.argmax(emotion_pred[0])
                 emotion_score     = round(emotion_pred[0][emotion_label_arg]*100,2)
                 emotion_label     = emotion_labels[emotion_label_arg]
@@ -250,7 +351,7 @@ def edit_frame(frame):
                 )
 
                 if emotion_image is not None:
-                    frame,h,w = paste(emotion_image, frame, +180, -100, 350, 0.5)
+                    frame = paste(emotion_image, frame, +180, -100, 350, 0.5)
                 else:
                     pass
                     #cv2.putText(frame, f'NONE!',
@@ -264,7 +365,47 @@ def edit_frame(frame):
                 #print(e)
                 #raise e
                 pass
+        
+        if mode == modes.ANIME_MODE:
+            global anime_buffer_image
+            try:
+                new_frame = anime_mode_output_queue.get(block=False)
+                ## if there are no new output, thrown exception. and never go next line.
+                if type(new_frame) == str:
+                    anime_buffer_image = frame
+                else:
+                    (old_frame, new_frame) = new_frame
+                    old_frame = cv2.resize(old_frame, (50, 50))
+                    new_frame = paste(old_frame, new_frame, +80, -80, 0, 1.0)
+                    anime_buffer_image = new_frame
+
+                anime_offsets    = (60, 60)
+                x1, x2, y1, y2    = apply_offsets_for_anime_mode((x,y,w,h), anime_offsets)
+                anime_rgb        = frame[y1:y2, x1:x2]
                 
+                #img = cv2.imread('testa.png')
+                #img = cv2.imread('testa.png', flags=cv2.IMREAD_COLOR)
+                #img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)                
+                #anime_rgb = img
+                try:
+                    cv2.imwrite('tmp.png',anime_rgb)
+                    img = cv2.imread('tmp.png', flags=cv2.IMREAD_COLOR)
+                    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)                
+                    anime_rgb = img
+
+                    anime_mode_input_queue.put(anime_rgb)
+                except Exception as e:
+                    anime_mode_input_queue.put(frame)
+                    
+            except queue.Empty as e:
+                pass
+            except Exception as e:
+                print(sys.stderr,e)
+                #raise e
+
+    if mode == modes.ANIME_MODE and anime_buffer_image is not None:
+        frame = anime_buffer_image
+        frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)        
     return frame
 
 
@@ -276,6 +417,8 @@ if __name__=="__main__":
     cap    = cv2.VideoCapture(input)
     if args.emotion_mode == True:
         mode = modes.EMOTION_MODE
+    elif args.anime_mode == True:
+        mode = modes.ANIME_MODE
     else:
         mode = modes.SIMPLE_SMILE_MODE
 
@@ -286,16 +429,25 @@ if __name__=="__main__":
     p = Popen(['ffmpeg', '-y', '-i', '-', '-pix_fmt', 'yuyv422', '-f', 'v4l2', output], stdin=PIPE)
 
 
+
     try:
+        if mode == modes.ANIME_MODE:
+            anime_mode_output_queue.put('dummy')
+            t = threading.Thread(target=anime_mode_worker)
+            t.start()
+            
         while True:
             ret,im = cap.read()
             im     = edit_frame(im)
             im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
             im     = Image.fromarray(np.uint8(im))
             im.save(p.stdin, 'JPEG')
-    except KeyboardInterrupt:        
+            
+    except KeyboardInterrupt:
         pass
-    
+
+
+    anime_session.close()
     p.stdin.close()
     p.wait()
 
