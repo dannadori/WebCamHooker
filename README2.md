@@ -1,7 +1,7 @@
 # WebCamHooker
-Web link(Japanese): https://cloud.flect.co.jp/entry/2020/03/31/162537
-Previous: see README.md
-Next link: see README3.md
+- Web link(Japanese): https://cloud.flect.co.jp/entry/2020/03/31/162537
+- Previous: see README.md
+- Next link: see README3.md
 
 
 This time, I would like to extend this a little and introduce you to the challenge of analyzing emotions in real time with AI (Tensorflow).
