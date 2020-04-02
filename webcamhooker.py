@@ -4,7 +4,7 @@ from PIL import Image
 import numpy as np
 import argparse
 from enum import IntEnum, auto
-import sys, math, os
+import sys, math, os, time
 
 import threading
 import queue
@@ -89,7 +89,9 @@ Queue for anime mode
 anime_mode_input_queue  = queue.Queue()
 anime_mode_output_queue = queue.Queue()
 anime_buffer_image      = None
-
+anime_frame_num         = 0
+anime_fps_start         = time.time()
+anime_fps               = 0
 '''
 Mode definition
 '''
@@ -367,7 +369,7 @@ def edit_frame(frame):
                 pass
         
         if mode == modes.ANIME_MODE:
-            global anime_buffer_image
+            global anime_buffer_image, anime_frame_num, anime_fps_start, anime_fps
             try:
                 new_frame = anime_mode_output_queue.get(block=False)
                 ## if there are no new output, thrown exception. and never go next line.
@@ -377,8 +379,30 @@ def edit_frame(frame):
                     (old_frame, new_frame) = new_frame
                     old_frame = cv2.resize(old_frame, (50, 50))
                     new_frame = paste(old_frame, new_frame, +80, -80, 0, 1.0)
-                    anime_buffer_image = new_frame
 
+                    anime_frame_num += 1
+                    anime_fps_now    = time.time()
+                    if anime_fps_now - anime_fps_start > 5:
+                        spend_time       = anime_fps_now - anime_fps_start
+                        anime_fps        = round((anime_frame_num / spend_time),2)
+                        anime_fps_start  = anime_fps_now
+                        anime_frame_num  = 0
+
+                    # for fps
+                    font_scale=0.5
+                    color = (200,200,200)
+                    thickness=1
+                    cv2.putText(new_frame, f'fps:{anime_fps}',
+                                (10,50),
+                                cv2.FONT_HERSHEY_SIMPLEX,
+                                font_scale, color, thickness, cv2.LINE_AA
+                    )
+                        
+
+                    anime_buffer_image = new_frame
+                    
+
+                # new frame entry to process
                 anime_offsets    = (60, 60)
                 x1, x2, y1, y2    = apply_offsets_for_anime_mode((x,y,w,h), anime_offsets)
                 anime_rgb        = frame[y1:y2, x1:x2]
@@ -393,7 +417,10 @@ def edit_frame(frame):
                     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)                
                     anime_rgb = img
 
+
                     anime_mode_input_queue.put(anime_rgb)
+                    
+
                 except Exception as e:
                     anime_mode_input_queue.put(frame)
                     
