@@ -1,5 +1,7 @@
 # WebCamHooker
-- Web link(Japanese): https://cloud.flect.co.jp/entry/2020/03/31/162537
+- Web link(Japanese): https://cloud.flect.co.jp/entry/2020/04/02/114756
+- Web link(English): https://medium.com/@dannadori/how-to-edit-the-image-stream-for-video-chat-teams-zoom-part-3-convert-to-anime-84a6788819d2
+
 - Previous: see README2.md
 
 This time, I’ve expanded it a little more and experimented with converting an image into an animation-style display, so here it is.
