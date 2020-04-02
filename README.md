@@ -2,6 +2,15 @@
 - Web link(Japanese): https://cloud.flect.co.jp/entry/2020/03/31/162537
 - Next link: see README2.md
 
+if you want to know about conversion to anime, see README3.md
+
+<p align="center">
+<img src="./doc/fps_test2.gif" width="800" />
+</p>
+
+
+
+
 ## 1. WebCamHooker
 
 Webcamhooker takes the input of a physical webcam and outputs it to a virtual webcam, which can be used to modify images in video chats such as Teams and Zoom.
