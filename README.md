@@ -2,7 +2,9 @@
 - Web link(Japanese): https://cloud.flect.co.jp/entry/2020/03/31/162537
 - Next link: see README2.md
 
-if you want to know about conversion to anime, see README3.md
+the function using selfie2anime is split to the other repository.
+if you want to know about this, see https://github.com/dannadori/selfie2anime_webhooker
+
 
 <p align="center">
 <img src="./doc/fps_test2.gif" width="800" />
