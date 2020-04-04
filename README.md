@@ -3,7 +3,7 @@
 - Next link: see README2.md
 
 the function using selfie2anime is split to the other repository.
-if you want to know about this, see https://github.com/dannadori/selfie2anime_webhooker
+if you want to know about this, see https://github.com/dannadori/selfie2anime_webcam_hooker
 
 
 <p align="center">
