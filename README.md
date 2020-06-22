@@ -1,3 +1,8 @@
+# News
+New Repositry is https://github.com/dannadori/selfie2anime_webcam_hooker
+
+
+
 # WebCamHooker
 - Web link(Japanese): https://cloud.flect.co.jp/entry/2020/03/31/162537
 - Next link: see README2.md
